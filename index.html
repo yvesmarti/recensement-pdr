@@ -406,6 +406,122 @@
             resize: vertical;
         }
         
+        /* Bacs multiples */
+        .bac-row {
+            background: var(--bg-elevated);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .bac-row-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        
+        .bac-row-title {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        .bac-row-delete {
+            background: none;
+            border: none;
+            color: var(--accent-red);
+            font-size: 1.2rem;
+            cursor: pointer;
+            padding: 4px;
+        }
+        
+        .bac-row-content {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .bac-select {
+            flex: 1;
+            min-width: 80px;
+            padding: 10px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+        }
+        
+        .bac-select:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+        
+        .bac-qty-control {
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            background: var(--bg-card);
+            border-radius: 8px;
+            padding: 2px;
+        }
+        
+        .bac-qty-btn {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 6px;
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            font-size: 1.1rem;
+            cursor: pointer;
+        }
+        
+        .bac-qty-btn:active {
+            background: var(--border-color);
+        }
+        
+        .bac-qty-value {
+            width: 30px;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 600;
+        }
+        
+        .btn-add-bac {
+            width: 100%;
+            padding: 14px;
+            background: var(--bg-elevated);
+            border: 2px dashed var(--border-color);
+            border-radius: 12px;
+            color: var(--text-secondary);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .btn-add-bac:active {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+        }
+        
+        .bacs-summary {
+            background: var(--bg-card);
+            border-radius: 10px;
+            padding: 12px 16px;
+            margin-top: 12px;
+            font-size: 0.85rem;
+            border: 1px solid var(--border-color);
+        }
+        
+        .summary-label {
+            color: var(--text-secondary);
+            margin-right: 8px;
+        }
+        
         .text-area:focus {
             outline: none;
             border-color: var(--accent-blue);
@@ -861,40 +977,15 @@
             <div class="section-title">🗑️ Bacs présents</div>
             
             <div class="form-group">
-                <div class="form-label">Litrage des bacs</div>
-                <div class="chip-group" id="litrageGroup">
-                    <button class="chip" data-value="120">120 L</button>
-                    <button class="chip" data-value="240">240 L</button>
-                    <button class="chip" data-value="360">360 L</button>
-                    <button class="chip selected" data-value="660">660 L</button>
-                    <button class="chip" data-value="770">770 L</button>
-                </div>
+                <div id="bacsContainer"></div>
+                <button class="btn-add-bac" id="btnAddBac">
+                    ➕ Ajouter des bacs
+                </button>
             </div>
             
-            <div class="form-group">
-                <div class="counter-row">
-                    <div class="counter-label">
-                        <div class="counter-icon gray">🗑️</div>
-                        <span class="counter-text">Bacs gris (OMR)</span>
-                    </div>
-                    <div class="counter-controls">
-                        <button class="counter-btn" data-target="bacsGris" data-action="minus">−</button>
-                        <span class="counter-value" id="bacsGrisValue">0</span>
-                        <button class="counter-btn" data-target="bacsGris" data-action="plus">+</button>
-                    </div>
-                </div>
-                
-                <div class="counter-row">
-                    <div class="counter-label">
-                        <div class="counter-icon yellow">♻️</div>
-                        <span class="counter-text">Bacs jaunes (Tri)</span>
-                    </div>
-                    <div class="counter-controls">
-                        <button class="counter-btn" data-target="bacsJaunes" data-action="minus">−</button>
-                        <span class="counter-value" id="bacsJaunesValue">0</span>
-                        <button class="counter-btn" data-target="bacsJaunes" data-action="plus">+</button>
-                    </div>
-                </div>
+            <div class="bacs-summary" id="bacsSummary">
+                <span class="summary-label">Total :</span>
+                <span id="summaryText">Aucun bac ajouté</span>
             </div>
             
             <!-- Claustra -->
@@ -985,7 +1076,13 @@
                     <span class="icon">📊</span>
                     <span>CSV</span>
                 </button>
-                <button class="export-btn" id="btnClearAll">
+                <button class="export-btn" id="btnExportZIP">
+                    <span class="icon">📦</span>
+                    <span>ZIP + Photos</span>
+                </button>
+            </div>
+            <div class="export-buttons" style="margin-top: 0;">
+                <button class="export-btn" id="btnClearAll" style="border-color: var(--accent-red); color: var(--accent-red);">
                     <span class="icon">🗑️</span>
                     <span>Effacer tout</span>
                 </button>
@@ -999,9 +1096,10 @@
     <div class="toast" id="toast"></div>
     
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
     <script>
         // ============================================
-        // APPLICATION RECENSEMENT PAV - NCPA
+        // APPLICATION RECENSEMENT PAV - NCPA v2
         // ============================================
         
         // État de l'application
@@ -1010,10 +1108,8 @@
             watchId: null,
             points: [],
             photos: [],
+            bacs: [], // Nouveau: liste de {type, litrage, quantite}
             form: {
-                litrage: '660',
-                bacsGris: 0,
-                bacsJaunes: 0,
                 hasClaustra: false,
                 claustraType: null,
                 evaluation: null,
@@ -1024,6 +1120,7 @@
         // Variables carte
         let map, positionMarker;
         let pointMarkers = [];
+        let bacIdCounter = 0;
         
         // ============================================
         // INITIALISATION
@@ -1035,6 +1132,7 @@
             setupEventListeners();
             startGPSWatch();
             updateUI();
+            renderBacs();
         }
         
         function initMap() {
@@ -1052,25 +1150,16 @@
             });
             positionMarker = L.marker([0, 0], { icon: posIcon });
             
-            // Restaurer les marqueurs des points existants
             state.points.forEach(p => addPointMarker(p));
         }
         
         function setupEventListeners() {
-            // Boutons header
             document.getElementById('btnList').addEventListener('click', openListModal);
             document.getElementById('btnLocate').addEventListener('click', centerOnPosition);
             document.getElementById('btnRefreshGPS').addEventListener('click', refreshGPS);
             
-            // Chips litrage
-            document.querySelectorAll('#litrageGroup .chip').forEach(chip => {
-                chip.addEventListener('click', () => selectChip('litrageGroup', chip, 'litrage'));
-            });
-            
-            // Compteurs
-            document.querySelectorAll('.counter-btn').forEach(btn => {
-                btn.addEventListener('click', handleCounter);
-            });
+            // Ajouter des bacs
+            document.getElementById('btnAddBac').addEventListener('click', addBacRow);
             
             // Toggle claustra
             document.getElementById('hasClaustra').addEventListener('change', (e) => {
@@ -1110,9 +1199,9 @@
             document.getElementById('btnCloseList').addEventListener('click', closeListModal);
             document.getElementById('btnExportGeoJSON').addEventListener('click', exportGeoJSON);
             document.getElementById('btnExportCSV').addEventListener('click', exportCSV);
+            document.getElementById('btnExportZIP').addEventListener('click', exportZIP);
             document.getElementById('btnClearAll').addEventListener('click', clearAllPoints);
             
-            // Fermer modal en cliquant à l'extérieur
             document.getElementById('modalList').addEventListener('click', (e) => {
                 if (e.target.id === 'modalList') closeListModal();
             });
@@ -1145,13 +1234,11 @@
             const { latitude, longitude, accuracy } = position.coords;
             state.currentPosition = { lat: latitude, lng: longitude, accuracy };
             
-            // Mettre à jour l'affichage
             document.getElementById('gpsDot').classList.add('active');
             document.getElementById('gpsText').textContent = `±${Math.round(accuracy)}m`;
             document.getElementById('coordsDisplay').textContent = 
                 `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
             
-            // Mettre à jour le marqueur
             positionMarker.setLatLng([latitude, longitude]).addTo(map);
         }
         
@@ -1181,6 +1268,96 @@
         }
         
         // ============================================
+        // GESTION DES BACS MULTIPLES
+        // ============================================
+        
+        function addBacRow() {
+            const id = ++bacIdCounter;
+            state.bacs.push({
+                id: id,
+                type: 'gris',
+                litrage: 660,
+                quantite: 1
+            });
+            renderBacs();
+        }
+        
+        function deleteBacRow(id) {
+            state.bacs = state.bacs.filter(b => b.id !== id);
+            renderBacs();
+        }
+        
+        function updateBac(id, field, value) {
+            const bac = state.bacs.find(b => b.id === id);
+            if (bac) {
+                if (field === 'quantite') {
+                    bac[field] = Math.max(1, parseInt(value) || 1);
+                } else if (field === 'litrage') {
+                    bac[field] = parseInt(value);
+                } else {
+                    bac[field] = value;
+                }
+                renderBacs();
+            }
+        }
+        
+        function renderBacs() {
+            const container = document.getElementById('bacsContainer');
+            
+            container.innerHTML = state.bacs.map((bac, index) => `
+                <div class="bac-row" data-id="${bac.id}">
+                    <div class="bac-row-header">
+                        <span class="bac-row-title">Bac ${index + 1}</span>
+                        <button class="bac-row-delete" onclick="deleteBacRow(${bac.id})">✕</button>
+                    </div>
+                    <div class="bac-row-content">
+                        <select class="bac-select" onchange="updateBac(${bac.id}, 'type', this.value)">
+                            <option value="gris" ${bac.type === 'gris' ? 'selected' : ''}>🗑️ Gris (OMR)</option>
+                            <option value="jaune" ${bac.type === 'jaune' ? 'selected' : ''}>♻️ Jaune (Tri)</option>
+                        </select>
+                        <select class="bac-select" onchange="updateBac(${bac.id}, 'litrage', this.value)">
+                            <option value="120" ${bac.litrage === 120 ? 'selected' : ''}>120 L</option>
+                            <option value="240" ${bac.litrage === 240 ? 'selected' : ''}>240 L</option>
+                            <option value="360" ${bac.litrage === 360 ? 'selected' : ''}>360 L</option>
+                            <option value="660" ${bac.litrage === 660 ? 'selected' : ''}>660 L</option>
+                            <option value="770" ${bac.litrage === 770 ? 'selected' : ''}>770 L</option>
+                        </select>
+                        <div class="bac-qty-control">
+                            <button class="bac-qty-btn" onclick="updateBac(${bac.id}, 'quantite', ${bac.quantite - 1})">−</button>
+                            <span class="bac-qty-value">${bac.quantite}</span>
+                            <button class="bac-qty-btn" onclick="updateBac(${bac.id}, 'quantite', ${bac.quantite + 1})">+</button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+            
+            updateBacsSummary();
+        }
+        
+        function updateBacsSummary() {
+            const summaryEl = document.getElementById('summaryText');
+            
+            if (state.bacs.length === 0) {
+                summaryEl.textContent = 'Aucun bac ajouté';
+                return;
+            }
+            
+            const gris = state.bacs.filter(b => b.type === 'gris');
+            const jaunes = state.bacs.filter(b => b.type === 'jaune');
+            
+            const grisTotal = gris.reduce((sum, b) => sum + b.quantite, 0);
+            const jaunesTotal = jaunes.reduce((sum, b) => sum + b.quantite, 0);
+            const grisVolume = gris.reduce((sum, b) => sum + (b.quantite * b.litrage), 0);
+            const jaunesVolume = jaunes.reduce((sum, b) => sum + (b.quantite * b.litrage), 0);
+            
+            const parts = [];
+            if (grisTotal > 0) parts.push(`${grisTotal} gris (${grisVolume}L)`);
+            if (jaunesTotal > 0) parts.push(`${jaunesTotal} jaunes (${jaunesVolume}L)`);
+            
+            summaryEl.textContent = parts.join(' • ') || 'Aucun bac';
+        }
+        
+        // ============================================
         // FORMULAIRE
         // ============================================
         
@@ -1190,20 +1367,6 @@
             });
             selectedChip.classList.add('selected');
             state.form[stateKey] = selectedChip.dataset.value;
-        }
-        
-        function handleCounter(e) {
-            const btn = e.currentTarget;
-            const target = btn.dataset.target;
-            const action = btn.dataset.action;
-            
-            if (action === 'plus') {
-                state.form[target]++;
-            } else if (action === 'minus' && state.form[target] > 0) {
-                state.form[target]--;
-            }
-            
-            document.getElementById(`${target}Value`).textContent = state.form[target];
         }
         
         function selectEval(btn) {
@@ -1260,13 +1423,12 @@
         // ============================================
         
         function savePoint() {
-            // Validation
             if (!state.currentPosition) {
                 showToast('Position GPS requise', true);
                 return;
             }
             
-            if (state.form.bacsGris === 0 && state.form.bacsJaunes === 0) {
+            if (state.bacs.length === 0) {
                 showToast('Ajoutez au moins un bac', true);
                 return;
             }
@@ -1276,16 +1438,13 @@
                 return;
             }
             
-            // Créer le point
             const point = {
                 id: Date.now(),
                 timestamp: new Date().toISOString(),
                 lat: state.currentPosition.lat,
                 lng: state.currentPosition.lng,
                 accuracy: state.currentPosition.accuracy,
-                litrage: parseInt(state.form.litrage),
-                bacsGris: state.form.bacsGris,
-                bacsJaunes: state.form.bacsJaunes,
+                bacs: JSON.parse(JSON.stringify(state.bacs)), // Copie des bacs
                 hasClaustra: state.form.hasClaustra,
                 claustraType: state.form.claustraType,
                 evaluation: state.form.evaluation,
@@ -1314,36 +1473,30 @@
                 iconSize: [16, 16]
             });
             
+            const grisCount = point.bacs.filter(b => b.type === 'gris').reduce((s, b) => s + b.quantite, 0);
+            const jauneCount = point.bacs.filter(b => b.type === 'jaune').reduce((s, b) => s + b.quantite, 0);
+            
             const marker = L.marker([point.lat, point.lng], { icon })
                 .addTo(map)
                 .bindPopup(`
                     <b>Point #${state.points.indexOf(point) + 1}</b><br>
-                    ${point.bacsGris} gris, ${point.bacsJaunes} jaunes<br>
-                    ${point.litrage}L
+                    ${grisCount} gris, ${jauneCount} jaunes
                 `);
             
             pointMarkers.push({ id: point.id, marker });
         }
         
         function resetForm() {
-            // Reset state
             state.form = {
-                litrage: '660',
-                bacsGris: 0,
-                bacsJaunes: 0,
                 hasClaustra: false,
                 claustraType: null,
                 evaluation: null,
                 notes: ''
             };
             state.photos = [];
+            state.bacs = [];
+            bacIdCounter = 0;
             
-            // Reset UI
-            document.querySelectorAll('#litrageGroup .chip').forEach(c => {
-                c.classList.toggle('selected', c.dataset.value === '660');
-            });
-            document.getElementById('bacsGrisValue').textContent = '0';
-            document.getElementById('bacsJaunesValue').textContent = '0';
             document.getElementById('hasClaustra').checked = false;
             document.getElementById('claustraDetails').classList.remove('visible');
             document.querySelectorAll('#claustraType .chip').forEach(c => c.classList.remove('selected'));
@@ -1352,6 +1505,7 @@
             });
             document.getElementById('notes').value = '';
             document.getElementById('photoPreview').innerHTML = '';
+            renderBacs();
         }
         
         // ============================================
@@ -1391,6 +1545,10 @@
                     ? `Claustra: ${point.claustraType || 'non précisé'}`
                     : 'Pas de claustra';
                 
+                const grisCount = point.bacs.filter(b => b.type === 'gris').reduce((s, b) => s + b.quantite, 0);
+                const jauneCount = point.bacs.filter(b => b.type === 'jaune').reduce((s, b) => s + b.quantite, 0);
+                const bacsDetail = point.bacs.map(b => `${b.quantite}×${b.litrage}L ${b.type}`).join(', ');
+                
                 return `
                     <div class="point-card">
                         <div class="point-header">
@@ -1405,14 +1563,15 @@
                         <div class="point-bacs">
                             <div class="point-bac">
                                 <div class="point-bac-icon gray">🗑️</div>
-                                <span>${point.bacsGris} × ${point.litrage}L</span>
+                                <span>${grisCount} gris</span>
                             </div>
                             <div class="point-bac">
                                 <div class="point-bac-icon yellow">♻️</div>
-                                <span>${point.bacsJaunes} × ${point.litrage}L</span>
+                                <span>${jauneCount} jaunes</span>
                             </div>
                         </div>
                         <div class="point-details">
+                            📦 ${bacsDetail}<br>
                             ${claustraInfo}
                             ${point.notes ? `<br>📝 ${point.notes.substring(0, 50)}${point.notes.length > 50 ? '...' : ''}` : ''}
                             ${point.photos.length > 0 ? `<br>📷 ${point.photos.length} photo(s)` : ''}
@@ -1462,34 +1621,38 @@
         function exportGeoJSON() {
             const geojson = {
                 type: 'FeatureCollection',
-                features: state.points.map((p, i) => ({
-                    type: 'Feature',
-                    properties: {
-                        id: i + 1,
-                        timestamp: p.timestamp,
-                        litrage: p.litrage,
-                        bacs_gris: p.bacsGris,
-                        bacs_jaunes: p.bacsJaunes,
-                        total_bacs: p.bacsGris + p.bacsJaunes,
-                        volume_total_gris: p.bacsGris * p.litrage,
-                        volume_total_jaune: p.bacsJaunes * p.litrage,
-                        claustra: p.hasClaustra ? 'oui' : 'non',
-                        type_claustra: p.claustraType || '',
-                        evaluation: p.evaluation,
-                        notes: p.notes,
-                        nb_photos: p.photos.length,
-                        precision_gps: p.accuracy
-                    },
-                    geometry: {
-                        type: 'Point',
-                        coordinates: [p.lng, p.lat]
-                    }
-                }))
+                features: state.points.map((p, i) => {
+                    const gris = p.bacs.filter(b => b.type === 'gris');
+                    const jaunes = p.bacs.filter(b => b.type === 'jaune');
+                    
+                    return {
+                        type: 'Feature',
+                        properties: {
+                            id: i + 1,
+                            timestamp: p.timestamp,
+                            bacs_gris_count: gris.reduce((s, b) => s + b.quantite, 0),
+                            bacs_jaunes_count: jaunes.reduce((s, b) => s + b.quantite, 0),
+                            volume_gris_total: gris.reduce((s, b) => s + b.quantite * b.litrage, 0),
+                            volume_jaunes_total: jaunes.reduce((s, b) => s + b.quantite * b.litrage, 0),
+                            bacs_detail: p.bacs.map(b => `${b.quantite}x${b.litrage}L_${b.type}`).join(';'),
+                            claustra: p.hasClaustra ? 'oui' : 'non',
+                            type_claustra: p.claustraType || '',
+                            evaluation: p.evaluation,
+                            notes: p.notes,
+                            nb_photos: p.photos.length,
+                            precision_gps: p.accuracy
+                        },
+                        geometry: {
+                            type: 'Point',
+                            coordinates: [p.lng, p.lat]
+                        }
+                    };
+                })
             };
             
             downloadFile(
                 JSON.stringify(geojson, null, 2),
-                `recensement_pav_${formatDate()}.geojson`,
+                `recensement_pdr_${formatDate()}.geojson`,
                 'application/geo+json'
             );
             
@@ -1499,13 +1662,15 @@
         function exportCSV() {
             const headers = [
                 'ID', 'Date', 'Heure', 'Latitude', 'Longitude', 'Precision_GPS',
-                'Litrage', 'Bacs_Gris', 'Bacs_Jaunes', 'Total_Bacs',
-                'Volume_Gris_L', 'Volume_Jaune_L',
-                'Claustra', 'Type_Claustra', 'Evaluation', 'Notes', 'Nb_Photos'
+                'Nb_Bacs_Gris', 'Nb_Bacs_Jaunes', 'Volume_Gris_L', 'Volume_Jaune_L',
+                'Detail_Bacs', 'Claustra', 'Type_Claustra', 'Evaluation', 'Notes', 'Nb_Photos'
             ];
             
             const rows = state.points.map((p, i) => {
                 const dt = new Date(p.timestamp);
+                const gris = p.bacs.filter(b => b.type === 'gris');
+                const jaunes = p.bacs.filter(b => b.type === 'jaune');
+                
                 return [
                     i + 1,
                     dt.toLocaleDateString('fr-FR'),
@@ -1513,12 +1678,11 @@
                     p.lat,
                     p.lng,
                     p.accuracy,
-                    p.litrage,
-                    p.bacsGris,
-                    p.bacsJaunes,
-                    p.bacsGris + p.bacsJaunes,
-                    p.bacsGris * p.litrage,
-                    p.bacsJaunes * p.litrage,
+                    gris.reduce((s, b) => s + b.quantite, 0),
+                    jaunes.reduce((s, b) => s + b.quantite, 0),
+                    gris.reduce((s, b) => s + b.quantite * b.litrage, 0),
+                    jaunes.reduce((s, b) => s + b.quantite * b.litrage, 0),
+                    `"${p.bacs.map(b => `${b.quantite}x${b.litrage}L ${b.type}`).join(', ')}"`,
                     p.hasClaustra ? 'Oui' : 'Non',
                     p.claustraType || '',
                     p.evaluation,
@@ -1530,12 +1694,109 @@
             const csv = [headers.join(';'), ...rows].join('\n');
             
             downloadFile(
-                '\uFEFF' + csv, // BOM pour Excel
-                `recensement_pav_${formatDate()}.csv`,
+                '\uFEFF' + csv,
+                `recensement_pdr_${formatDate()}.csv`,
                 'text/csv;charset=utf-8'
             );
             
             showToast('CSV exporté');
+        }
+        
+        async function exportZIP() {
+            showToast('Création du ZIP en cours...');
+            
+            const zip = new JSZip();
+            const photosFolder = zip.folder('photos');
+            
+            // Ajouter le GeoJSON
+            const geojson = {
+                type: 'FeatureCollection',
+                features: state.points.map((p, i) => {
+                    const gris = p.bacs.filter(b => b.type === 'gris');
+                    const jaunes = p.bacs.filter(b => b.type === 'jaune');
+                    
+                    return {
+                        type: 'Feature',
+                        properties: {
+                            id: i + 1,
+                            timestamp: p.timestamp,
+                            bacs_gris_count: gris.reduce((s, b) => s + b.quantite, 0),
+                            bacs_jaunes_count: jaunes.reduce((s, b) => s + b.quantite, 0),
+                            volume_gris_total: gris.reduce((s, b) => s + b.quantite * b.litrage, 0),
+                            volume_jaunes_total: jaunes.reduce((s, b) => s + b.quantite * b.litrage, 0),
+                            bacs_detail: p.bacs.map(b => `${b.quantite}x${b.litrage}L_${b.type}`).join(';'),
+                            claustra: p.hasClaustra ? 'oui' : 'non',
+                            type_claustra: p.claustraType || '',
+                            evaluation: p.evaluation,
+                            notes: p.notes,
+                            photos: p.photos.map((_, j) => `photos/point_${String(i+1).padStart(2,'0')}_photo_${j+1}.jpg`),
+                            precision_gps: p.accuracy
+                        },
+                        geometry: {
+                            type: 'Point',
+                            coordinates: [p.lng, p.lat]
+                        }
+                    };
+                })
+            };
+            zip.file('recensement.geojson', JSON.stringify(geojson, null, 2));
+            
+            // Ajouter le CSV
+            const csvHeaders = [
+                'ID', 'Date', 'Heure', 'Latitude', 'Longitude',
+                'Nb_Bacs_Gris', 'Nb_Bacs_Jaunes', 'Volume_Gris_L', 'Volume_Jaune_L',
+                'Detail_Bacs', 'Claustra', 'Type_Claustra', 'Evaluation', 'Notes', 'Photos'
+            ];
+            const csvRows = state.points.map((p, i) => {
+                const dt = new Date(p.timestamp);
+                const gris = p.bacs.filter(b => b.type === 'gris');
+                const jaunes = p.bacs.filter(b => b.type === 'jaune');
+                const photoNames = p.photos.map((_, j) => `point_${String(i+1).padStart(2,'0')}_photo_${j+1}.jpg`).join(' | ');
+                
+                return [
+                    i + 1,
+                    dt.toLocaleDateString('fr-FR'),
+                    dt.toLocaleTimeString('fr-FR'),
+                    p.lat,
+                    p.lng,
+                    gris.reduce((s, b) => s + b.quantite, 0),
+                    jaunes.reduce((s, b) => s + b.quantite, 0),
+                    gris.reduce((s, b) => s + b.quantite * b.litrage, 0),
+                    jaunes.reduce((s, b) => s + b.quantite * b.litrage, 0),
+                    `"${p.bacs.map(b => `${b.quantite}x${b.litrage}L ${b.type}`).join(', ')}"`,
+                    p.hasClaustra ? 'Oui' : 'Non',
+                    p.claustraType || '',
+                    p.evaluation,
+                    `"${(p.notes || '').replace(/"/g, '""')}"`,
+                    photoNames
+                ].join(';');
+            });
+            zip.file('recensement.csv', '\uFEFF' + [csvHeaders.join(';'), ...csvRows].join('\n'));
+            
+            // Ajouter les photos
+            for (let i = 0; i < state.points.length; i++) {
+                const point = state.points[i];
+                for (let j = 0; j < point.photos.length; j++) {
+                    const photoData = point.photos[j];
+                    // Extraire les données base64
+                    const base64Data = photoData.split(',')[1];
+                    const fileName = `point_${String(i+1).padStart(2,'0')}_photo_${j+1}.jpg`;
+                    photosFolder.file(fileName, base64Data, { base64: true });
+                }
+            }
+            
+            // Générer et télécharger le ZIP
+            const content = await zip.generateAsync({ type: 'blob' });
+            const url = URL.createObjectURL(content);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `recensement_pdr_${formatDate()}.zip`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            showToast('ZIP avec photos exporté ✓');
         }
         
         function clearAllPoints() {
