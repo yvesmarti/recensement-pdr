@@ -659,6 +659,46 @@
             bottom: 0;
         }
         
+        .action-row {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 12px;
+        }
+        
+        .btn-cancel-form {
+            flex: 1;
+            padding: 14px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--accent-red);
+            border-radius: 12px;
+            color: var(--accent-red);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .btn-cancel-form:active {
+            background: rgba(255, 71, 87, 0.1);
+        }
+        
+        .btn-export-quick {
+            flex: 1;
+            padding: 14px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--accent-blue);
+            border-radius: 12px;
+            color: var(--accent-blue);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        
+        .btn-export-quick:active {
+            background: rgba(55, 66, 250, 0.1);
+        }
+        
         .btn-save {
             width: 100%;
             padding: 18px;
@@ -1053,6 +1093,14 @@
         
         <!-- Action Bar -->
         <div class="action-bar">
+            <div class="action-row">
+                <button class="btn-cancel-form" id="btnCancelForm">
+                    ✕ Annuler
+                </button>
+                <button class="btn-export-quick" id="btnExportQuick">
+                    📋 Export (<span id="pointCountBottom">0</span>)
+                </button>
+            </div>
             <button class="btn-save" id="btnSave">
                 💾 Enregistrer ce point
             </button>
@@ -1195,6 +1243,12 @@
             // Sauvegarder
             document.getElementById('btnSave').addEventListener('click', savePoint);
             
+            // Bouton Annuler
+            document.getElementById('btnCancelForm').addEventListener('click', cancelForm);
+            
+            // Bouton Export rapide (en bas)
+            document.getElementById('btnExportQuick').addEventListener('click', openListModal);
+            
             // Modal
             document.getElementById('btnCloseList').addEventListener('click', closeListModal);
             document.getElementById('btnExportGeoJSON').addEventListener('click', exportGeoJSON);
@@ -1205,6 +1259,18 @@
             document.getElementById('modalList').addEventListener('click', (e) => {
                 if (e.target.id === 'modalList') closeListModal();
             });
+        }
+        
+        // ============================================
+        // ANNULER LE FORMULAIRE
+        // ============================================
+        
+        function cancelForm() {
+            if (state.bacs.length > 0 || state.photos.length > 0 || state.form.notes) {
+                if (!confirm('Annuler la saisie en cours ?')) return;
+            }
+            resetForm();
+            showToast('Formulaire réinitialisé');
         }
         
         // ============================================
@@ -1819,6 +1885,7 @@
         
         function updateUI() {
             document.getElementById('pointCount').textContent = state.points.length;
+            document.getElementById('pointCountBottom').textContent = state.points.length;
         }
         
         function showToast(message, isError = false) {
