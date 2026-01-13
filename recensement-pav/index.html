@@ -1,0 +1,1624 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <title>Recensement PAV - NCPA</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" href="icon-192.png">
+    <link rel="apple-touch-icon" href="icon-192.png">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+        
+        :root {
+            --bg-dark: #0d0d14;
+            --bg-card: #1a1a2e;
+            --bg-elevated: #252542;
+            --accent-green: #00ff88;
+            --accent-red: #ff4757;
+            --accent-orange: #ffa502;
+            --accent-blue: #3742fa;
+            --accent-yellow: #ffc312;
+            --accent-gray: #747d8c;
+            --text-primary: #ffffff;
+            --text-secondary: #8b8ba7;
+            --border-color: #2d2d4a;
+        }
+        
+        body {
+            font-family: 'Space Grotesk', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+        
+        .app-container {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            min-height: 100dvh;
+        }
+        
+        /* Header */
+        .header {
+            background: var(--bg-card);
+            padding: 12px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        
+        .header-title {
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+        }
+        
+        .header-title span {
+            color: var(--accent-green);
+        }
+        
+        .header-actions {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .header-btn {
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 8px 12px;
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .header-btn:active {
+            background: var(--border-color);
+        }
+        
+        .badge {
+            background: var(--accent-green);
+            color: var(--bg-dark);
+            font-size: 0.7rem;
+            font-weight: 700;
+            padding: 2px 6px;
+            border-radius: 10px;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        
+        /* Map Section */
+        .map-section {
+            height: 200px;
+            position: relative;
+            border-bottom: 1px solid var(--border-color);
+        }
+        
+        #map {
+            width: 100%;
+            height: 100%;
+            background: var(--bg-dark);
+        }
+        
+        .gps-status {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            background: rgba(26, 26, 46, 0.95);
+            backdrop-filter: blur(10px);
+            padding: 8px 12px;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            z-index: 500;
+        }
+        
+        .gps-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-secondary);
+        }
+        
+        .gps-dot.active {
+            background: var(--accent-green);
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0%, 100% { opacity: 1; box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.4); }
+            50% { opacity: 0.8; box-shadow: 0 0 0 8px rgba(0, 255, 136, 0); }
+        }
+        
+        .btn-locate {
+            position: absolute;
+            bottom: 10px;
+            right: 10px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 12px;
+            cursor: pointer;
+            z-index: 500;
+            font-size: 1.2rem;
+        }
+        
+        .btn-locate:active {
+            background: var(--bg-elevated);
+        }
+        
+        /* Form Section */
+        .form-section {
+            flex: 1;
+            padding: 16px;
+            overflow-y: auto;
+        }
+        
+        .section-title {
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .section-title::after {
+            content: '';
+            flex: 1;
+            height: 1px;
+            background: var(--border-color);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-label {
+            display: block;
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            margin-bottom: 8px;
+        }
+        
+        /* Counter Input */
+        .counter-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .counter-label {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        
+        .counter-icon {
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.1rem;
+        }
+        
+        .counter-icon.gray { background: linear-gradient(135deg, #57606f 0%, #747d8c 100%); }
+        .counter-icon.yellow { background: linear-gradient(135deg, #f9ca24 0%, #f0932b 100%); }
+        
+        .counter-text {
+            font-size: 0.9rem;
+        }
+        
+        .counter-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: var(--bg-elevated);
+            border-radius: 10px;
+            padding: 4px;
+        }
+        
+        .counter-btn {
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 8px;
+            background: var(--bg-card);
+            color: var(--text-primary);
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .counter-btn:active {
+            background: var(--border-color);
+        }
+        
+        .counter-value {
+            width: 40px;
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+        
+        /* Chip Select */
+        .chip-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .chip {
+            padding: 10px 16px;
+            background: var(--bg-elevated);
+            border: 2px solid var(--border-color);
+            border-radius: 25px;
+            color: var(--text-primary);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .chip:active {
+            transform: scale(0.98);
+        }
+        
+        .chip.selected {
+            border-color: var(--accent-green);
+            background: rgba(0, 255, 136, 0.1);
+        }
+        
+        .chip.selected-yellow {
+            border-color: var(--accent-yellow);
+            background: rgba(255, 195, 18, 0.1);
+        }
+        
+        .chip.selected-red {
+            border-color: var(--accent-red);
+            background: rgba(255, 71, 87, 0.1);
+        }
+        
+        /* Toggle Switch */
+        .toggle-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 12px 16px;
+            background: var(--bg-elevated);
+            border-radius: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .toggle-label {
+            font-size: 0.95rem;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            width: 52px;
+            height: 28px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 14px;
+            transition: 0.3s;
+        }
+        
+        .toggle-slider::before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 3px;
+            bottom: 3px;
+            background: var(--text-secondary);
+            border-radius: 50%;
+            transition: 0.3s;
+        }
+        
+        .toggle-switch input:checked + .toggle-slider {
+            background: rgba(0, 255, 136, 0.2);
+            border-color: var(--accent-green);
+        }
+        
+        .toggle-switch input:checked + .toggle-slider::before {
+            transform: translateX(24px);
+            background: var(--accent-green);
+        }
+        
+        /* Conditional Section */
+        .conditional-section {
+            display: none;
+            padding-left: 16px;
+            border-left: 2px solid var(--accent-green);
+            margin-bottom: 16px;
+        }
+        
+        .conditional-section.visible {
+            display: block;
+        }
+        
+        /* Text Area */
+        .text-area {
+            width: 100%;
+            min-height: 80px;
+            padding: 12px;
+            background: var(--bg-elevated);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+            resize: vertical;
+        }
+        
+        .text-area:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+        
+        .text-area::placeholder {
+            color: var(--text-secondary);
+        }
+        
+        /* Evaluation Section */
+        .evaluation-section {
+            background: var(--bg-card);
+            border-radius: 16px;
+            padding: 16px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .eval-title {
+            font-size: 0.95rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+        }
+        
+        .eval-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .eval-btn {
+            flex: 1;
+            padding: 14px;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s ease;
+        }
+        
+        .eval-btn .icon {
+            font-size: 1.5rem;
+        }
+        
+        .eval-btn.selected-green {
+            border-color: var(--accent-green);
+            background: rgba(0, 255, 136, 0.15);
+        }
+        
+        .eval-btn.selected-orange {
+            border-color: var(--accent-orange);
+            background: rgba(255, 165, 2, 0.15);
+        }
+        
+        .eval-btn.selected-red {
+            border-color: var(--accent-red);
+            background: rgba(255, 71, 87, 0.15);
+        }
+        
+        /* Photo Section */
+        .photo-section {
+            margin-bottom: 16px;
+        }
+        
+        .photo-btn {
+            width: 100%;
+            padding: 16px;
+            background: linear-gradient(135deg, var(--accent-blue) 0%, #5352ed 100%);
+            border: none;
+            border-radius: 12px;
+            color: white;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        
+        .photo-btn:active {
+            transform: scale(0.98);
+        }
+        
+        .photo-preview {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: 12px;
+        }
+        
+        .photo-thumb {
+            width: 70px;
+            height: 70px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 2px solid var(--border-color);
+        }
+        
+        .photo-thumb-container {
+            position: relative;
+        }
+        
+        .photo-delete {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            width: 22px;
+            height: 22px;
+            background: var(--accent-red);
+            border: none;
+            border-radius: 50%;
+            color: white;
+            font-size: 0.8rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Action Buttons */
+        .action-bar {
+            padding: 16px;
+            background: var(--bg-card);
+            border-top: 1px solid var(--border-color);
+            position: sticky;
+            bottom: 0;
+        }
+        
+        .btn-save {
+            width: 100%;
+            padding: 18px;
+            background: linear-gradient(135deg, var(--accent-green) 0%, #00cc6a 100%);
+            border: none;
+            border-radius: 14px;
+            color: var(--bg-dark);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            box-shadow: 0 4px 20px rgba(0, 255, 136, 0.3);
+        }
+        
+        .btn-save:active {
+            transform: scale(0.98);
+        }
+        
+        .btn-save:disabled {
+            background: var(--bg-elevated);
+            color: var(--text-secondary);
+            box-shadow: none;
+        }
+        
+        /* Modal Liste Points */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(5px);
+            z-index: 2000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+            overflow-y: auto;
+        }
+        
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        
+        .modal-full {
+            min-height: 100%;
+            background: var(--bg-dark);
+            padding: 16px;
+            padding-top: 60px;
+        }
+        
+        .modal-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: var(--bg-card);
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid var(--border-color);
+            z-index: 2001;
+        }
+        
+        .modal-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+        
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-primary);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 4px;
+        }
+        
+        .point-card {
+            background: var(--bg-card);
+            border-radius: 14px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border: 1px solid var(--border-color);
+        }
+        
+        .point-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 12px;
+        }
+        
+        .point-id {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+        }
+        
+        .point-eval {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+        
+        .point-eval.adapte { background: rgba(0, 255, 136, 0.2); color: var(--accent-green); }
+        .point-eval.a-verifier { background: rgba(255, 165, 2, 0.2); color: var(--accent-orange); }
+        .point-eval.non-adapte { background: rgba(255, 71, 87, 0.2); color: var(--accent-red); }
+        
+        .point-bacs {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 10px;
+        }
+        
+        .point-bac {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.9rem;
+        }
+        
+        .point-bac-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.75rem;
+        }
+        
+        .point-bac-icon.gray { background: var(--accent-gray); }
+        .point-bac-icon.yellow { background: var(--accent-yellow); color: var(--bg-dark); }
+        
+        .point-details {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+        }
+        
+        .point-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid var(--border-color);
+        }
+        
+        .point-action-btn {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--bg-elevated);
+            color: var(--text-primary);
+            font-size: 0.85rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+        }
+        
+        .point-action-btn.delete {
+            border-color: var(--accent-red);
+            color: var(--accent-red);
+        }
+        
+        .export-buttons {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .export-btn {
+            flex: 1;
+            padding: 14px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.9rem;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+        }
+        
+        .export-btn:active {
+            background: var(--bg-elevated);
+        }
+        
+        .export-btn .icon {
+            font-size: 1.3rem;
+        }
+        
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-secondary);
+        }
+        
+        .empty-state .icon {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+        
+        /* Toast */
+        .toast {
+            position: fixed;
+            bottom: 100px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--accent-green);
+            color: var(--bg-dark);
+            padding: 14px 24px;
+            border-radius: 30px;
+            font-weight: 600;
+            z-index: 3000;
+            opacity: 0;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+        
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+        }
+        
+        .toast.error {
+            background: var(--accent-red);
+            color: white;
+        }
+        
+        /* Hidden file input */
+        .hidden-input {
+            position: absolute;
+            opacity: 0;
+            pointer-events: none;
+        }
+        
+        /* Leaflet customization */
+        .leaflet-control-attribution { display: none; }
+        
+        .point-marker {
+            background: var(--accent-green);
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.3);
+        }
+        
+        .point-marker.orange {
+            background: var(--accent-orange);
+        }
+        
+        .point-marker.red {
+            background: var(--accent-red);
+        }
+        
+        .position-marker {
+            background: var(--accent-blue);
+            border: 3px solid white;
+            border-radius: 50%;
+            box-shadow: 0 0 0 8px rgba(55, 66, 250, 0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="header">
+            <h1 class="header-title">Recensement <span>PAV</span></h1>
+            <div class="header-actions">
+                <button class="header-btn" id="btnList">
+                    📋 <span class="badge" id="pointCount">0</span>
+                </button>
+            </div>
+        </header>
+        
+        <!-- Map -->
+        <div class="map-section">
+            <div id="map"></div>
+            <div class="gps-status">
+                <div class="gps-dot" id="gpsDot"></div>
+                <span id="gpsText">GPS inactif</span>
+            </div>
+            <button class="btn-locate" id="btnLocate">📍</button>
+        </div>
+        
+        <!-- Form -->
+        <div class="form-section">
+            <!-- Coordonnées -->
+            <div class="section-title">📍 Position</div>
+            <div class="toggle-row" style="margin-bottom: 16px;">
+                <div>
+                    <div class="toggle-label">Coordonnées GPS</div>
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; color: var(--text-secondary); margin-top: 4px;" id="coordsDisplay">
+                        En attente du GPS...
+                    </div>
+                </div>
+                <button class="btn-locate" id="btnRefreshGPS" style="position: static; font-size: 1rem; padding: 8px;">🔄</button>
+            </div>
+            
+            <!-- Bacs -->
+            <div class="section-title">🗑️ Bacs présents</div>
+            
+            <div class="form-group">
+                <div class="form-label">Litrage des bacs</div>
+                <div class="chip-group" id="litrageGroup">
+                    <button class="chip" data-value="120">120 L</button>
+                    <button class="chip" data-value="240">240 L</button>
+                    <button class="chip" data-value="360">360 L</button>
+                    <button class="chip selected" data-value="660">660 L</button>
+                    <button class="chip" data-value="770">770 L</button>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <div class="counter-row">
+                    <div class="counter-label">
+                        <div class="counter-icon gray">🗑️</div>
+                        <span class="counter-text">Bacs gris (OMR)</span>
+                    </div>
+                    <div class="counter-controls">
+                        <button class="counter-btn" data-target="bacsGris" data-action="minus">−</button>
+                        <span class="counter-value" id="bacsGrisValue">0</span>
+                        <button class="counter-btn" data-target="bacsGris" data-action="plus">+</button>
+                    </div>
+                </div>
+                
+                <div class="counter-row">
+                    <div class="counter-label">
+                        <div class="counter-icon yellow">♻️</div>
+                        <span class="counter-text">Bacs jaunes (Tri)</span>
+                    </div>
+                    <div class="counter-controls">
+                        <button class="counter-btn" data-target="bacsJaunes" data-action="minus">−</button>
+                        <span class="counter-value" id="bacsJaunesValue">0</span>
+                        <button class="counter-btn" data-target="bacsJaunes" data-action="plus">+</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Claustra -->
+            <div class="section-title">🏗️ Aménagement</div>
+            
+            <div class="toggle-row">
+                <span class="toggle-label">Présence d'un claustra</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="hasClaustra">
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+            
+            <div class="conditional-section" id="claustraDetails">
+                <div class="form-group">
+                    <div class="form-label">Type de claustra</div>
+                    <div class="chip-group" id="claustraType">
+                        <button class="chip" data-value="beton">🧱 Béton</button>
+                        <button class="chip" data-value="bois">🪵 Bois</button>
+                        <button class="chip" data-value="metal">⚙️ Métal</button>
+                        <button class="chip" data-value="autre">❓ Autre</button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Évaluation -->
+            <div class="section-title">📊 Évaluation</div>
+            
+            <div class="evaluation-section">
+                <div class="eval-title">Adapté au changement de fréquence ?</div>
+                <div class="eval-buttons" id="evalGroup">
+                    <button class="eval-btn" data-value="adapte">
+                        <span class="icon">✅</span>
+                        <span>Adapté</span>
+                    </button>
+                    <button class="eval-btn" data-value="a-verifier">
+                        <span class="icon">⚠️</span>
+                        <span>À vérifier</span>
+                    </button>
+                    <button class="eval-btn" data-value="non-adapte">
+                        <span class="icon">❌</span>
+                        <span>Non adapté</span>
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Photo -->
+            <div class="section-title">📷 Photo</div>
+            
+            <div class="photo-section">
+                <input type="file" accept="image/*" capture="environment" class="hidden-input" id="photoInput" multiple>
+                <button class="photo-btn" id="btnPhoto">
+                    📸 Prendre une photo
+                </button>
+                <div class="photo-preview" id="photoPreview"></div>
+            </div>
+            
+            <!-- Notes -->
+            <div class="section-title">📝 Observations</div>
+            
+            <div class="form-group">
+                <textarea class="text-area" id="notes" placeholder="Notes libres, observations particulières..."></textarea>
+            </div>
+        </div>
+        
+        <!-- Action Bar -->
+        <div class="action-bar">
+            <button class="btn-save" id="btnSave">
+                💾 Enregistrer ce point
+            </button>
+        </div>
+    </div>
+    
+    <!-- Modal Liste Points -->
+    <div class="modal-overlay" id="modalList">
+        <div class="modal-full">
+            <div class="modal-header">
+                <h2 class="modal-title">Points recensés</h2>
+                <button class="modal-close" id="btnCloseList">✕</button>
+            </div>
+            
+            <div class="export-buttons">
+                <button class="export-btn" id="btnExportGeoJSON">
+                    <span class="icon">🗺️</span>
+                    <span>GeoJSON</span>
+                </button>
+                <button class="export-btn" id="btnExportCSV">
+                    <span class="icon">📊</span>
+                    <span>CSV</span>
+                </button>
+                <button class="export-btn" id="btnClearAll">
+                    <span class="icon">🗑️</span>
+                    <span>Effacer tout</span>
+                </button>
+            </div>
+            
+            <div id="pointsList"></div>
+        </div>
+    </div>
+    
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+    
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // ============================================
+        // APPLICATION RECENSEMENT PAV - NCPA
+        // ============================================
+        
+        // État de l'application
+        const state = {
+            currentPosition: null,
+            watchId: null,
+            points: [],
+            photos: [],
+            form: {
+                litrage: '660',
+                bacsGris: 0,
+                bacsJaunes: 0,
+                hasClaustra: false,
+                claustraType: null,
+                evaluation: null,
+                notes: ''
+            }
+        };
+        
+        // Variables carte
+        let map, positionMarker;
+        let pointMarkers = [];
+        
+        // ============================================
+        // INITIALISATION
+        // ============================================
+        
+        function init() {
+            initMap();
+            loadSavedData();
+            setupEventListeners();
+            startGPSWatch();
+            updateUI();
+        }
+        
+        function initMap() {
+            map = L.map('map', {
+                zoomControl: false
+            }).setView([49.2877, -0.1210], 14);
+            
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19
+            }).addTo(map);
+            
+            const posIcon = L.divIcon({
+                className: 'position-marker',
+                iconSize: [16, 16]
+            });
+            positionMarker = L.marker([0, 0], { icon: posIcon });
+            
+            // Restaurer les marqueurs des points existants
+            state.points.forEach(p => addPointMarker(p));
+        }
+        
+        function setupEventListeners() {
+            // Boutons header
+            document.getElementById('btnList').addEventListener('click', openListModal);
+            document.getElementById('btnLocate').addEventListener('click', centerOnPosition);
+            document.getElementById('btnRefreshGPS').addEventListener('click', refreshGPS);
+            
+            // Chips litrage
+            document.querySelectorAll('#litrageGroup .chip').forEach(chip => {
+                chip.addEventListener('click', () => selectChip('litrageGroup', chip, 'litrage'));
+            });
+            
+            // Compteurs
+            document.querySelectorAll('.counter-btn').forEach(btn => {
+                btn.addEventListener('click', handleCounter);
+            });
+            
+            // Toggle claustra
+            document.getElementById('hasClaustra').addEventListener('change', (e) => {
+                state.form.hasClaustra = e.target.checked;
+                document.getElementById('claustraDetails').classList.toggle('visible', e.target.checked);
+                if (!e.target.checked) {
+                    state.form.claustraType = null;
+                    document.querySelectorAll('#claustraType .chip').forEach(c => c.classList.remove('selected'));
+                }
+            });
+            
+            // Chips claustra
+            document.querySelectorAll('#claustraType .chip').forEach(chip => {
+                chip.addEventListener('click', () => selectChip('claustraType', chip, 'claustraType'));
+            });
+            
+            // Évaluation
+            document.querySelectorAll('#evalGroup .eval-btn').forEach(btn => {
+                btn.addEventListener('click', () => selectEval(btn));
+            });
+            
+            // Photo
+            document.getElementById('btnPhoto').addEventListener('click', () => {
+                document.getElementById('photoInput').click();
+            });
+            document.getElementById('photoInput').addEventListener('change', handlePhotos);
+            
+            // Notes
+            document.getElementById('notes').addEventListener('input', (e) => {
+                state.form.notes = e.target.value;
+            });
+            
+            // Sauvegarder
+            document.getElementById('btnSave').addEventListener('click', savePoint);
+            
+            // Modal
+            document.getElementById('btnCloseList').addEventListener('click', closeListModal);
+            document.getElementById('btnExportGeoJSON').addEventListener('click', exportGeoJSON);
+            document.getElementById('btnExportCSV').addEventListener('click', exportCSV);
+            document.getElementById('btnClearAll').addEventListener('click', clearAllPoints);
+            
+            // Fermer modal en cliquant à l'extérieur
+            document.getElementById('modalList').addEventListener('click', (e) => {
+                if (e.target.id === 'modalList') closeListModal();
+            });
+        }
+        
+        // ============================================
+        // GPS
+        // ============================================
+        
+        function startGPSWatch() {
+            if (!navigator.geolocation) {
+                document.getElementById('gpsText').textContent = 'GPS non dispo';
+                return;
+            }
+            
+            const options = {
+                enableHighAccuracy: true,
+                timeout: 15000,
+                maximumAge: 0
+            };
+            
+            state.watchId = navigator.geolocation.watchPosition(
+                onPositionSuccess,
+                onPositionError,
+                options
+            );
+        }
+        
+        function onPositionSuccess(position) {
+            const { latitude, longitude, accuracy } = position.coords;
+            state.currentPosition = { lat: latitude, lng: longitude, accuracy };
+            
+            // Mettre à jour l'affichage
+            document.getElementById('gpsDot').classList.add('active');
+            document.getElementById('gpsText').textContent = `±${Math.round(accuracy)}m`;
+            document.getElementById('coordsDisplay').textContent = 
+                `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
+            
+            // Mettre à jour le marqueur
+            positionMarker.setLatLng([latitude, longitude]).addTo(map);
+        }
+        
+        function onPositionError(error) {
+            document.getElementById('gpsDot').classList.remove('active');
+            document.getElementById('gpsText').textContent = 'Erreur GPS';
+            console.error('GPS Error:', error);
+        }
+        
+        function centerOnPosition() {
+            if (state.currentPosition) {
+                map.setView([state.currentPosition.lat, state.currentPosition.lng], 17);
+            } else {
+                showToast('Position GPS non disponible', true);
+            }
+        }
+        
+        function refreshGPS() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    onPositionSuccess,
+                    onPositionError,
+                    { enableHighAccuracy: true, timeout: 10000 }
+                );
+                showToast('GPS actualisé');
+            }
+        }
+        
+        // ============================================
+        // FORMULAIRE
+        // ============================================
+        
+        function selectChip(groupId, selectedChip, stateKey) {
+            document.querySelectorAll(`#${groupId} .chip`).forEach(c => {
+                c.classList.remove('selected');
+            });
+            selectedChip.classList.add('selected');
+            state.form[stateKey] = selectedChip.dataset.value;
+        }
+        
+        function handleCounter(e) {
+            const btn = e.currentTarget;
+            const target = btn.dataset.target;
+            const action = btn.dataset.action;
+            
+            if (action === 'plus') {
+                state.form[target]++;
+            } else if (action === 'minus' && state.form[target] > 0) {
+                state.form[target]--;
+            }
+            
+            document.getElementById(`${target}Value`).textContent = state.form[target];
+        }
+        
+        function selectEval(btn) {
+            document.querySelectorAll('#evalGroup .eval-btn').forEach(b => {
+                b.classList.remove('selected-green', 'selected-orange', 'selected-red');
+            });
+            
+            const value = btn.dataset.value;
+            state.form.evaluation = value;
+            
+            const colorClass = {
+                'adapte': 'selected-green',
+                'a-verifier': 'selected-orange',
+                'non-adapte': 'selected-red'
+            }[value];
+            
+            btn.classList.add(colorClass);
+        }
+        
+        function handlePhotos(e) {
+            const files = Array.from(e.target.files);
+            
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    state.photos.push({
+                        id: Date.now() + Math.random(),
+                        data: event.target.result,
+                        name: file.name
+                    });
+                    renderPhotoPreview();
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+        
+        function renderPhotoPreview() {
+            const container = document.getElementById('photoPreview');
+            container.innerHTML = state.photos.map(photo => `
+                <div class="photo-thumb-container">
+                    <img src="${photo.data}" class="photo-thumb" alt="Photo">
+                    <button class="photo-delete" onclick="deletePhoto(${photo.id})">✕</button>
+                </div>
+            `).join('');
+        }
+        
+        function deletePhoto(id) {
+            state.photos = state.photos.filter(p => p.id !== id);
+            renderPhotoPreview();
+        }
+        
+        // ============================================
+        // SAUVEGARDE
+        // ============================================
+        
+        function savePoint() {
+            // Validation
+            if (!state.currentPosition) {
+                showToast('Position GPS requise', true);
+                return;
+            }
+            
+            if (state.form.bacsGris === 0 && state.form.bacsJaunes === 0) {
+                showToast('Ajoutez au moins un bac', true);
+                return;
+            }
+            
+            if (!state.form.evaluation) {
+                showToast('Sélectionnez une évaluation', true);
+                return;
+            }
+            
+            // Créer le point
+            const point = {
+                id: Date.now(),
+                timestamp: new Date().toISOString(),
+                lat: state.currentPosition.lat,
+                lng: state.currentPosition.lng,
+                accuracy: state.currentPosition.accuracy,
+                litrage: parseInt(state.form.litrage),
+                bacsGris: state.form.bacsGris,
+                bacsJaunes: state.form.bacsJaunes,
+                hasClaustra: state.form.hasClaustra,
+                claustraType: state.form.claustraType,
+                evaluation: state.form.evaluation,
+                notes: state.form.notes,
+                photos: state.photos.map(p => p.data)
+            };
+            
+            state.points.push(point);
+            addPointMarker(point);
+            saveData();
+            updateUI();
+            resetForm();
+            
+            showToast(`Point #${state.points.length} enregistré ✓`);
+        }
+        
+        function addPointMarker(point) {
+            const colorClass = {
+                'adapte': '',
+                'a-verifier': 'orange',
+                'non-adapte': 'red'
+            }[point.evaluation] || '';
+            
+            const icon = L.divIcon({
+                className: `point-marker ${colorClass}`,
+                iconSize: [16, 16]
+            });
+            
+            const marker = L.marker([point.lat, point.lng], { icon })
+                .addTo(map)
+                .bindPopup(`
+                    <b>Point #${state.points.indexOf(point) + 1}</b><br>
+                    ${point.bacsGris} gris, ${point.bacsJaunes} jaunes<br>
+                    ${point.litrage}L
+                `);
+            
+            pointMarkers.push({ id: point.id, marker });
+        }
+        
+        function resetForm() {
+            // Reset state
+            state.form = {
+                litrage: '660',
+                bacsGris: 0,
+                bacsJaunes: 0,
+                hasClaustra: false,
+                claustraType: null,
+                evaluation: null,
+                notes: ''
+            };
+            state.photos = [];
+            
+            // Reset UI
+            document.querySelectorAll('#litrageGroup .chip').forEach(c => {
+                c.classList.toggle('selected', c.dataset.value === '660');
+            });
+            document.getElementById('bacsGrisValue').textContent = '0';
+            document.getElementById('bacsJaunesValue').textContent = '0';
+            document.getElementById('hasClaustra').checked = false;
+            document.getElementById('claustraDetails').classList.remove('visible');
+            document.querySelectorAll('#claustraType .chip').forEach(c => c.classList.remove('selected'));
+            document.querySelectorAll('#evalGroup .eval-btn').forEach(b => {
+                b.classList.remove('selected-green', 'selected-orange', 'selected-red');
+            });
+            document.getElementById('notes').value = '';
+            document.getElementById('photoPreview').innerHTML = '';
+        }
+        
+        // ============================================
+        // LISTE & EXPORT
+        // ============================================
+        
+        function openListModal() {
+            renderPointsList();
+            document.getElementById('modalList').classList.add('active');
+        }
+        
+        function closeListModal() {
+            document.getElementById('modalList').classList.remove('active');
+        }
+        
+        function renderPointsList() {
+            const container = document.getElementById('pointsList');
+            
+            if (state.points.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">📍</div>
+                        <p>Aucun point recensé</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = state.points.map((point, index) => {
+                const evalLabel = {
+                    'adapte': 'Adapté',
+                    'a-verifier': 'À vérifier',
+                    'non-adapte': 'Non adapté'
+                }[point.evaluation];
+                
+                const claustraInfo = point.hasClaustra 
+                    ? `Claustra: ${point.claustraType || 'non précisé'}`
+                    : 'Pas de claustra';
+                
+                return `
+                    <div class="point-card">
+                        <div class="point-header">
+                            <div>
+                                <div class="point-id">Point #${index + 1}</div>
+                                <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                                    ${new Date(point.timestamp).toLocaleString('fr-FR')}
+                                </div>
+                            </div>
+                            <span class="point-eval ${point.evaluation}">${evalLabel}</span>
+                        </div>
+                        <div class="point-bacs">
+                            <div class="point-bac">
+                                <div class="point-bac-icon gray">🗑️</div>
+                                <span>${point.bacsGris} × ${point.litrage}L</span>
+                            </div>
+                            <div class="point-bac">
+                                <div class="point-bac-icon yellow">♻️</div>
+                                <span>${point.bacsJaunes} × ${point.litrage}L</span>
+                            </div>
+                        </div>
+                        <div class="point-details">
+                            ${claustraInfo}
+                            ${point.notes ? `<br>📝 ${point.notes.substring(0, 50)}${point.notes.length > 50 ? '...' : ''}` : ''}
+                            ${point.photos.length > 0 ? `<br>📷 ${point.photos.length} photo(s)` : ''}
+                        </div>
+                        <div class="point-actions">
+                            <button class="point-action-btn" onclick="viewOnMap(${point.id})">
+                                🗺️ Voir
+                            </button>
+                            <button class="point-action-btn delete" onclick="deletePoint(${point.id})">
+                                🗑️ Supprimer
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+        
+        function viewOnMap(id) {
+            const point = state.points.find(p => p.id === id);
+            if (point) {
+                closeListModal();
+                map.setView([point.lat, point.lng], 18);
+                const markerData = pointMarkers.find(m => m.id === id);
+                if (markerData) {
+                    markerData.marker.openPopup();
+                }
+            }
+        }
+        
+        function deletePoint(id) {
+            if (!confirm('Supprimer ce point ?')) return;
+            
+            state.points = state.points.filter(p => p.id !== id);
+            
+            const markerData = pointMarkers.find(m => m.id === id);
+            if (markerData) {
+                map.removeLayer(markerData.marker);
+                pointMarkers = pointMarkers.filter(m => m.id !== id);
+            }
+            
+            saveData();
+            updateUI();
+            renderPointsList();
+            showToast('Point supprimé');
+        }
+        
+        function exportGeoJSON() {
+            const geojson = {
+                type: 'FeatureCollection',
+                features: state.points.map((p, i) => ({
+                    type: 'Feature',
+                    properties: {
+                        id: i + 1,
+                        timestamp: p.timestamp,
+                        litrage: p.litrage,
+                        bacs_gris: p.bacsGris,
+                        bacs_jaunes: p.bacsJaunes,
+                        total_bacs: p.bacsGris + p.bacsJaunes,
+                        volume_total_gris: p.bacsGris * p.litrage,
+                        volume_total_jaune: p.bacsJaunes * p.litrage,
+                        claustra: p.hasClaustra ? 'oui' : 'non',
+                        type_claustra: p.claustraType || '',
+                        evaluation: p.evaluation,
+                        notes: p.notes,
+                        nb_photos: p.photos.length,
+                        precision_gps: p.accuracy
+                    },
+                    geometry: {
+                        type: 'Point',
+                        coordinates: [p.lng, p.lat]
+                    }
+                }))
+            };
+            
+            downloadFile(
+                JSON.stringify(geojson, null, 2),
+                `recensement_pav_${formatDate()}.geojson`,
+                'application/geo+json'
+            );
+            
+            showToast('GeoJSON exporté');
+        }
+        
+        function exportCSV() {
+            const headers = [
+                'ID', 'Date', 'Heure', 'Latitude', 'Longitude', 'Precision_GPS',
+                'Litrage', 'Bacs_Gris', 'Bacs_Jaunes', 'Total_Bacs',
+                'Volume_Gris_L', 'Volume_Jaune_L',
+                'Claustra', 'Type_Claustra', 'Evaluation', 'Notes', 'Nb_Photos'
+            ];
+            
+            const rows = state.points.map((p, i) => {
+                const dt = new Date(p.timestamp);
+                return [
+                    i + 1,
+                    dt.toLocaleDateString('fr-FR'),
+                    dt.toLocaleTimeString('fr-FR'),
+                    p.lat,
+                    p.lng,
+                    p.accuracy,
+                    p.litrage,
+                    p.bacsGris,
+                    p.bacsJaunes,
+                    p.bacsGris + p.bacsJaunes,
+                    p.bacsGris * p.litrage,
+                    p.bacsJaunes * p.litrage,
+                    p.hasClaustra ? 'Oui' : 'Non',
+                    p.claustraType || '',
+                    p.evaluation,
+                    `"${(p.notes || '').replace(/"/g, '""')}"`,
+                    p.photos.length
+                ].join(';');
+            });
+            
+            const csv = [headers.join(';'), ...rows].join('\n');
+            
+            downloadFile(
+                '\uFEFF' + csv, // BOM pour Excel
+                `recensement_pav_${formatDate()}.csv`,
+                'text/csv;charset=utf-8'
+            );
+            
+            showToast('CSV exporté');
+        }
+        
+        function clearAllPoints() {
+            if (!confirm('Supprimer TOUS les points recensés ?')) return;
+            if (!confirm('Cette action est irréversible. Confirmer ?')) return;
+            
+            state.points = [];
+            pointMarkers.forEach(m => map.removeLayer(m.marker));
+            pointMarkers = [];
+            
+            localStorage.removeItem('recensement_pav');
+            updateUI();
+            renderPointsList();
+            showToast('Données effacées');
+        }
+        
+        // ============================================
+        // UTILITAIRES
+        // ============================================
+        
+        function updateUI() {
+            document.getElementById('pointCount').textContent = state.points.length;
+        }
+        
+        function showToast(message, isError = false) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.className = 'toast' + (isError ? ' error' : '');
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 3000);
+        }
+        
+        function formatDate() {
+            const d = new Date();
+            return `${d.getFullYear()}${String(d.getMonth()+1).padStart(2,'0')}${String(d.getDate()).padStart(2,'0')}`;
+        }
+        
+        function downloadFile(content, filename, mimeType) {
+            const blob = new Blob([content], { type: mimeType });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        // ============================================
+        // PERSISTANCE
+        // ============================================
+        
+        function saveData() {
+            localStorage.setItem('recensement_pav', JSON.stringify(state.points));
+        }
+        
+        function loadSavedData() {
+            const saved = localStorage.getItem('recensement_pav');
+            if (saved) {
+                try {
+                    state.points = JSON.parse(saved);
+                } catch (e) {
+                    console.error('Erreur chargement:', e);
+                }
+            }
+        }
+        
+        // ============================================
+        // SERVICE WORKER
+        // ============================================
+        
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('./sw.js')
+                .then(() => console.log('SW OK'))
+                .catch(err => console.log('SW Error:', err));
+        }
+        
+        // Démarrer
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
