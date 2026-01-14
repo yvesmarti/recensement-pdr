@@ -380,6 +380,67 @@
             background: var(--accent-green);
         }
         
+        /* Toggle Buttons (Oui/Non) */
+        .toggle-buttons {
+            display: flex;
+            gap: 6px;
+        }
+        
+        .toggle-btn {
+            padding: 8px 16px;
+            border: 2px solid var(--border-color);
+            border-radius: 20px;
+            background: var(--bg-card);
+            color: var(--text-secondary);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+        
+        .toggle-btn.selected-oui {
+            border-color: var(--accent-green);
+            background: rgba(0, 255, 136, 0.15);
+            color: var(--accent-green);
+        }
+        
+        .toggle-btn.selected-non {
+            border-color: var(--accent-red);
+            background: rgba(255, 71, 87, 0.15);
+            color: var(--accent-red);
+        }
+        
+        /* Champ texte autre claustra */
+        .autre-claustra-field {
+            display: none;
+            margin-top: 12px;
+        }
+        
+        .autre-claustra-field.visible {
+            display: block;
+        }
+        
+        .text-input {
+            width: 100%;
+            padding: 12px;
+            background: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            color: var(--text-primary);
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.95rem;
+        }
+        
+        .text-input:focus {
+            outline: none;
+            border-color: var(--accent-blue);
+        }
+        
+        .text-input::placeholder {
+            color: var(--text-secondary);
+        }
+        
         /* Conditional Section */
         .conditional-section {
             display: none;
@@ -1043,11 +1104,23 @@
                 <div class="form-group">
                     <div class="form-label">Type de claustra</div>
                     <div class="chip-group" id="claustraType">
-                        <button class="chip" data-value="beton">🧱 Béton</button>
                         <button class="chip" data-value="bois">🪵 Bois</button>
-                        <button class="chip" data-value="metal">⚙️ Métal</button>
+                        <button class="chip" data-value="canisse">🎋 Canisse</button>
+                        <button class="chip" data-value="beton">🧱 Béton</button>
                         <button class="chip" data-value="autre">❓ Autre</button>
                     </div>
+                    <div class="autre-claustra-field" id="autreClaustraField">
+                        <input type="text" class="text-input" id="autreClaustraText" placeholder="Précisez le type de claustra...">
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Accès aux bacs -->
+            <div class="toggle-row">
+                <span class="toggle-label">Accès aux bacs satisfaisant</span>
+                <div class="toggle-buttons" id="accesGroup">
+                    <button class="toggle-btn" data-value="oui">✓ Oui</button>
+                    <button class="toggle-btn" data-value="non">✕ Non</button>
                 </div>
             </div>
             
@@ -1160,6 +1233,8 @@
             form: {
                 hasClaustra: false,
                 claustraType: null,
+                autreClaustraText: '',
+                accesSatisfaisant: null,
                 evaluation: null,
                 notes: ''
             }
@@ -1215,13 +1290,42 @@
                 document.getElementById('claustraDetails').classList.toggle('visible', e.target.checked);
                 if (!e.target.checked) {
                     state.form.claustraType = null;
+                    state.form.autreClaustraText = '';
                     document.querySelectorAll('#claustraType .chip').forEach(c => c.classList.remove('selected'));
+                    document.getElementById('autreClaustraField').classList.remove('visible');
+                    document.getElementById('autreClaustraText').value = '';
                 }
             });
             
-            // Chips claustra
+            // Chips claustra (avec gestion du champ "autre")
             document.querySelectorAll('#claustraType .chip').forEach(chip => {
-                chip.addEventListener('click', () => selectChip('claustraType', chip, 'claustraType'));
+                chip.addEventListener('click', () => {
+                    selectChip('claustraType', chip, 'claustraType');
+                    // Afficher/masquer le champ texte si "autre" est sélectionné
+                    const isAutre = chip.dataset.value === 'autre';
+                    document.getElementById('autreClaustraField').classList.toggle('visible', isAutre);
+                    if (!isAutre) {
+                        state.form.autreClaustraText = '';
+                        document.getElementById('autreClaustraText').value = '';
+                    }
+                });
+            });
+            
+            // Champ texte "autre claustra"
+            document.getElementById('autreClaustraText').addEventListener('input', (e) => {
+                state.form.autreClaustraText = e.target.value;
+            });
+            
+            // Boutons accès satisfaisant (Oui/Non)
+            document.querySelectorAll('#accesGroup .toggle-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('#accesGroup .toggle-btn').forEach(b => {
+                        b.classList.remove('selected-oui', 'selected-non');
+                    });
+                    const value = btn.dataset.value;
+                    state.form.accesSatisfaisant = value;
+                    btn.classList.add(value === 'oui' ? 'selected-oui' : 'selected-non');
+                });
             });
             
             // Évaluation
@@ -1504,6 +1608,12 @@
                 return;
             }
             
+            // Déterminer le type de claustra final
+            let claustraTypeFinal = state.form.claustraType;
+            if (state.form.claustraType === 'autre' && state.form.autreClaustraText) {
+                claustraTypeFinal = state.form.autreClaustraText;
+            }
+            
             const point = {
                 id: Date.now(),
                 timestamp: new Date().toISOString(),
@@ -1512,7 +1622,8 @@
                 accuracy: state.currentPosition.accuracy,
                 bacs: JSON.parse(JSON.stringify(state.bacs)), // Copie des bacs
                 hasClaustra: state.form.hasClaustra,
-                claustraType: state.form.claustraType,
+                claustraType: claustraTypeFinal,
+                accesSatisfaisant: state.form.accesSatisfaisant,
                 evaluation: state.form.evaluation,
                 notes: state.form.notes,
                 photos: state.photos.map(p => p.data)
@@ -1556,6 +1667,8 @@
             state.form = {
                 hasClaustra: false,
                 claustraType: null,
+                autreClaustraText: '',
+                accesSatisfaisant: null,
                 evaluation: null,
                 notes: ''
             };
@@ -1566,6 +1679,11 @@
             document.getElementById('hasClaustra').checked = false;
             document.getElementById('claustraDetails').classList.remove('visible');
             document.querySelectorAll('#claustraType .chip').forEach(c => c.classList.remove('selected'));
+            document.getElementById('autreClaustraField').classList.remove('visible');
+            document.getElementById('autreClaustraText').value = '';
+            document.querySelectorAll('#accesGroup .toggle-btn').forEach(b => {
+                b.classList.remove('selected-oui', 'selected-non');
+            });
             document.querySelectorAll('#evalGroup .eval-btn').forEach(b => {
                 b.classList.remove('selected-green', 'selected-orange', 'selected-red');
             });
@@ -1611,6 +1729,10 @@
                     ? `Claustra: ${point.claustraType || 'non précisé'}`
                     : 'Pas de claustra';
                 
+                const accesInfo = point.accesSatisfaisant 
+                    ? `Accès: ${point.accesSatisfaisant === 'oui' ? '✓ OK' : '✕ Non'}`
+                    : '';
+                
                 const grisCount = point.bacs.filter(b => b.type === 'gris').reduce((s, b) => s + b.quantite, 0);
                 const jauneCount = point.bacs.filter(b => b.type === 'jaune').reduce((s, b) => s + b.quantite, 0);
                 const bacsDetail = point.bacs.map(b => `${b.quantite}×${b.litrage}L ${b.type}`).join(', ');
@@ -1638,7 +1760,7 @@
                         </div>
                         <div class="point-details">
                             📦 ${bacsDetail}<br>
-                            ${claustraInfo}
+                            ${claustraInfo}${accesInfo ? ` • ${accesInfo}` : ''}
                             ${point.notes ? `<br>📝 ${point.notes.substring(0, 50)}${point.notes.length > 50 ? '...' : ''}` : ''}
                             ${point.photos.length > 0 ? `<br>📷 ${point.photos.length} photo(s)` : ''}
                         </div>
@@ -1703,6 +1825,7 @@
                             bacs_detail: p.bacs.map(b => `${b.quantite}x${b.litrage}L_${b.type}`).join(';'),
                             claustra: p.hasClaustra ? 'oui' : 'non',
                             type_claustra: p.claustraType || '',
+                            acces_satisfaisant: p.accesSatisfaisant || '',
                             evaluation: p.evaluation,
                             notes: p.notes,
                             nb_photos: p.photos.length,
@@ -1729,7 +1852,7 @@
             const headers = [
                 'ID', 'Date', 'Heure', 'Latitude', 'Longitude', 'Precision_GPS',
                 'Nb_Bacs_Gris', 'Nb_Bacs_Jaunes', 'Volume_Gris_L', 'Volume_Jaune_L',
-                'Detail_Bacs', 'Claustra', 'Type_Claustra', 'Evaluation', 'Notes', 'Nb_Photos'
+                'Detail_Bacs', 'Claustra', 'Type_Claustra', 'Acces_Satisfaisant', 'Evaluation', 'Notes', 'Nb_Photos'
             ];
             
             const rows = state.points.map((p, i) => {
@@ -1751,6 +1874,7 @@
                     `"${p.bacs.map(b => `${b.quantite}x${b.litrage}L ${b.type}`).join(', ')}"`,
                     p.hasClaustra ? 'Oui' : 'Non',
                     p.claustraType || '',
+                    p.accesSatisfaisant === 'oui' ? 'Oui' : (p.accesSatisfaisant === 'non' ? 'Non' : ''),
                     p.evaluation,
                     `"${(p.notes || '').replace(/"/g, '""')}"`,
                     p.photos.length
@@ -1793,6 +1917,7 @@
                             bacs_detail: p.bacs.map(b => `${b.quantite}x${b.litrage}L_${b.type}`).join(';'),
                             claustra: p.hasClaustra ? 'oui' : 'non',
                             type_claustra: p.claustraType || '',
+                            acces_satisfaisant: p.accesSatisfaisant || '',
                             evaluation: p.evaluation,
                             notes: p.notes,
                             photos: p.photos.map((_, j) => `photos/point_${String(i+1).padStart(2,'0')}_photo_${j+1}.jpg`),
@@ -1811,7 +1936,7 @@
             const csvHeaders = [
                 'ID', 'Date', 'Heure', 'Latitude', 'Longitude',
                 'Nb_Bacs_Gris', 'Nb_Bacs_Jaunes', 'Volume_Gris_L', 'Volume_Jaune_L',
-                'Detail_Bacs', 'Claustra', 'Type_Claustra', 'Evaluation', 'Notes', 'Photos'
+                'Detail_Bacs', 'Claustra', 'Type_Claustra', 'Acces_Satisfaisant', 'Evaluation', 'Notes', 'Photos'
             ];
             const csvRows = state.points.map((p, i) => {
                 const dt = new Date(p.timestamp);
@@ -1832,6 +1957,7 @@
                     `"${p.bacs.map(b => `${b.quantite}x${b.litrage}L ${b.type}`).join(', ')}"`,
                     p.hasClaustra ? 'Oui' : 'Non',
                     p.claustraType || '',
+                    p.accesSatisfaisant === 'oui' ? 'Oui' : (p.accesSatisfaisant === 'non' ? 'Non' : ''),
                     p.evaluation,
                     `"${(p.notes || '').replace(/"/g, '""')}"`,
                     photoNames

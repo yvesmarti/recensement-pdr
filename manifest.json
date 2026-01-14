@@ -4,7 +4,7 @@
     "description": "Recensement des points de regroupement de bacs déchets",
     "start_url": "./index.html",
     "scope": "./",
-    "display": "standalone",
+    "display": "fullscreen",
     "orientation": "portrait",
     "background_color": "#0d0d14",
     "theme_color": "#1a1a2e",

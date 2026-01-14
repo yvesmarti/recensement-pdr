@@ -1,5 +1,5 @@
 // Service Worker - Recensement PAV NCPA
-const CACHE_NAME = 'recensement-pav-v3';
+const CACHE_NAME = 'recensement-pav-v4';
 const ASSETS = [
     './',
     './index.html',
